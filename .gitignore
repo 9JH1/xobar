@@ -1,0 +1,8 @@
+.vscode/*
+bar
+exec 
+exec.c 
+exec.sh
+xobar_test.c 
+xobar
+config.toml
