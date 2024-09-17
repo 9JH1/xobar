@@ -1,1 +1,1 @@
-echo -n "$(date)"
+date +$1 | awk '{printf $0}'
