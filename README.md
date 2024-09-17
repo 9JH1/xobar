@@ -51,3 +51,7 @@ the configuration is made up of four primary objects those being the `center`, `
 ### settings
 
 the settings object holds the main styles for the bar, it holds the padding sizes and the default colors
+
+### left, right & center
+
+these are the default styles for the left right and center sectors they can be styled just like the settings box. if not styled the sectors colors will fall back to whats in the settings and if there are no settings colors then it will fall back to default terminal colors

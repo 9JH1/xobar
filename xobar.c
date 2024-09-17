@@ -646,6 +646,7 @@ int main(int argc, char *argv[])
                 else
                 {
                     rightModuleContent = toml_string_in(rightModule, "exec");
+                    rightModuleContentString = execute_command
 
                     // still no scripts but ill come back to this soon
                 }

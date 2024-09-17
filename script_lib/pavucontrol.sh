@@ -1,0 +1,1 @@
+pactl get-sink-volume @DEFAULT_SINK@ | grep -Po '\d+(?=%)' | head -n 1 | awk '{printf $0}'
