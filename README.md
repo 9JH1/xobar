@@ -11,20 +11,19 @@ xobar uses a TOML based configuration like so
 [left]
 spacer = " "
 children = ["left_example"]
-background = "#ff0000"
-foreground = "#00ff00"
 
 [center]
 spacer = " "
 children = ["center_example"]
-background = "#ff0000"
-foreground = "#00ff00"
+background = "#FF0000"
+prefix-tail = "<"
+suffix-tail = ">"
+tail-foreground = "#FF0000"
+
 
 [right]
 spacer = " "
 children = ["right_example"]
-background = "#ff0000"
-foreground = "#00ff00"
 
 [left_example]
 type="script"
