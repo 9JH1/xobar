@@ -9,11 +9,12 @@
 #include "toml.c"
 #include <stdio.h>
 #include <unistd.h>
-// strcmp atoi round strcat
+// no libs lol
 
 #define BUFFER_SIZE 1024
 #define INT_MAX BUFFER_SIZE
 #define INT_MIN BUFFER_SIZE * -1
+
 // max command byte sizes
 int strcmp(const char *str1, const char *str2)
 {
@@ -165,7 +166,7 @@ void printc(const char *fg_hex, const char *bg_hex, const char *text)
     }
 
     // Convert and apply background color if provided
-    if (bg_hex != NULL || fg_hex != "")
+    if (bg_hex != NULL || bg_hex != "")
     {
         if (!first)
         {
@@ -190,11 +191,11 @@ void printc(const char *fg_hex, const char *bg_hex, const char *text)
         printf("%s\033[0m", text);
     }
 }
-static void vout(const char *msg, const char *msg1, int verbose, int error)
+void vout(const char *msg, const char *msg1, int vb, int error)
 {
-    if (verbose == 1)
+    if (vb == 1)
     {
-        printf("%s %s");
+        printf("%s %s\n", msg, msg1);
     }
     if (error == 1)
     {
@@ -209,11 +210,12 @@ int main(int argc, char *argv[])
     char errbuf[256];
     char *configFile = NULL,
          *bar = "";
-    int verbose = 0,
-        removeSize = 0,
+    int removeSize = 0,
         maxModuleTitleSize = 30,
         recurse = 0,
-        recurseTimeout = 5;
+        recurseTimeout = 5,
+        verbose = 0,
+        tail = 0;
 
     // condition vars on arguments
     for (int a = 1; a < argc; a++)
@@ -225,28 +227,37 @@ int main(int argc, char *argv[])
         { // set verbose to one
             verbose = 1;
         }
-        else if (strcmp(argument, "-c") == 0)
+        else if (strcmp(argument, "-c") == 0 && nextArgument != NULL)
         { // config file argument "-c"
             configFile = nextArgument;
         }
-        else if (strcmp(argument, "-r") == 0)
+        else if (strcmp(argument, "-r") == 0 && nextArgument != NULL)
         { // recurse mode on
             recurse = 1;
             recurseTimeout = atoi(nextArgument);
+        }
+        else if (strcmp(argument, "-t") == 0)
+        {
+            tail = 1;
+        }
+        else
+        {
+            // argument not found
+            vout("ERROR: invalid argument property:", argument, verbose, 0);
         }
     }
 
     // load the config file
     if (configFile == NULL)
     {
-        vout("ERROR: ", "file not found", verbose, 1);
+        vout("ERROR:", "file not found", verbose, 1);
     }
     else
     {
         fp = fopen(configFile, "r");
         if (!fp)
         {
-            vout("ERROR: ", "cannot open config file", verbose, 1);
+            vout("ERROR: cannot open config file", configFile, verbose, 1);
         }
     }
 
@@ -260,46 +271,326 @@ int main(int argc, char *argv[])
     // load the settings
     toml_table_t *settings = toml_table_in(config, "settings");
     if (!settings)
-    {
-        vout("ERROR: ", "[settings] module not found", verbose, 1);
-    }
+        vout("ERROR: [settings] module not found", "", verbose, 1);
     else
-    {
-        vout("INFO: ", "[settings] module loaded", verbose, 0);
-    }
+        vout("INFO: [settings] module loaded", "", verbose, 0);
 
     // assign the settings variables
     int settingsSpacerWidths = toml_int_in(settings, "spacer-width").u.i,
         settingsPaddingInner = toml_int_in(settings, "padding-inner").u.i,
         settingsPaddingOuter = toml_int_in(settings, "padding-outer").u.i,
-        barSizeHalf = (gbs() / 2) - settingsPaddingOuter * 2;
-    char *settingsBackground = toml_string_in(settings, "background").u.s,
+        barSize = gbs();
+    char *currentModule = "",
+         *settingsBackground = toml_string_in(settings, "background").u.s,
          *settingsForeground = toml_string_in(settings, "foreground").u.s,
-         *settingsSpacerChar = toml_string_in(settings, "spacer-char").u.s,
+         *settingsSpacerChar = toml_string_in(settings, "spacer").u.s,
+
          *settingsPaddingForeground = toml_string_in(settings, "padding-foreground").u.s,
          *settingsPaddingBackground = toml_string_in(settings, "padding-background").u.s;
+
     // swap out null items
     if (settingsSpacerChar == NULL)
     {
-        settingsSpacerChar = " ";
+        settingsSpacerChar = "";
     }
-    // add the very first padding char of padding outer
-    for (int tmp_paddingInner = 0; tmp_paddingInner < settingsPaddingInner; tmp_paddingInner++)
-    {
-        printc(settingsForeground, settingsBackground, settingsSpacerChar);
-    }
-mainLoop:
-    // content
 
-    // EOF operations
-    for (int tmp_paddingInner = 0; tmp_paddingInner < settingsPaddingInner; tmp_paddingInner++)
+    // get the module blocks
+
+renderBar:
+    // add the very first padding char of padding outer
+    for (int tmp_paddingInner = 0; tmp_paddingInner < settingsPaddingOuter; tmp_paddingInner++)
     {
         printc(settingsForeground, settingsBackground, settingsSpacerChar);
     }
+
+// content
+renderContent:
+    for (int itModule = 0; itModule < 3; itModule++) // 0=left, 1=center, 2=right
+    {
+        int currentModuleRemoveSizeLocal = 0, nextModuleRemoveSizeLocal = 0;
+        if (itModule == 0)
+        {
+            currentModule = "right";
+        }
+        else if (itModule == 1)
+        {
+            currentModule = "center";
+        }
+        else
+        {
+            currentModule = "left";
+        }
+        vout("INFO: loaded required module:", currentModule, verbose, 0);
+        // for MODULE
+        toml_table_t *module = toml_table_in(config, currentModule);
+
+        char *moduleBackground = toml_string_in(module, "background").u.s,
+             *moduleForeground = toml_string_in(module, "foreground").u.s,
+             *moduleSpacerChar = toml_string_in(module, "spacer").u.s,
+             *modulePaddingForeground = toml_string_in(module, "padding-foreground").u.s,
+             *modulePaddingBackground = toml_string_in(module, "padding-background").u.s;
+
+        toml_array_t *moduleChildren /*plural*/ = toml_array_in(module, "children");
+        for (int tmp_moduleLoop = 0;; tmp_moduleLoop++)
+        {
+            if (!moduleChildren)
+                vout("FATAL_ERROR: required module not found:", currentModule, verbose, 1);
+
+            // for SUBMODULES
+            toml_datum_t tmp_moduleChild = toml_string_at(moduleChildren, tmp_moduleLoop);
+            if (!tmp_moduleChild.ok)
+                // if the module is not found then exit script
+                break;
+
+            vout("INFO: loaded submodule:", tmp_moduleChild.u.s, verbose, 0);
+
+            toml_table_t *moduleChild = toml_table_in(config, tmp_moduleChild.u.s);
+            if (!moduleChild)
+                // if the module is not found then exit script
+                vout("FATAL_ERROR: required module not found:", currentModule, verbose, 1);
+
+            // define variables
+            char
+                *moduleChildType = toml_string_in(moduleChild, "type").u.s,
+                *moduleChildContent;
+
+            // get the content of the module
+            if (strcmp(moduleChildType, "text") == 0)
+            {
+                moduleChildContent = toml_string_in(moduleChild, "content").u.s;
+            }
+            else
+            {
+                moduleChildContent = systemc(toml_string_in(moduleChild, "exec").u.s);
+            }
+            int childModuleLeftPadding, childModuleRightPadding;
+            if (itModule == 2)
+            { // module is left
+                childModuleLeftPadding = 0;
+                childModuleRightPadding = settingsPaddingInner;
+            }
+            else if (itModule == 1)
+            {
+
+                childModuleLeftPadding = settingsPaddingInner / 2;
+                childModuleRightPadding = settingsPaddingInner / 2;
+            }
+            else
+            {
+
+                childModuleLeftPadding = settingsPaddingInner;
+                childModuleRightPadding = 0;
+            }
+            char *spacerChar;
+            if (moduleSpacerChar == NULL)
+            {
+                spacerChar = settingsSpacerChar;
+            }
+            else
+            {
+                spacerChar = moduleSpacerChar;
+            }
+
+            for (int i = 0; i < childModuleLeftPadding; i++)
+            {
+                currentModuleRemoveSizeLocal += strlen(spacerChar);
+            }
+            currentModuleRemoveSizeLocal += strlen(moduleChildContent);
+            // right padding
+            for (int i = 0; i < childModuleRightPadding; i++)
+            {
+
+                currentModuleRemoveSizeLocal += strlen(spacerChar);
+            }
+        }
+        if (itModule == 0)
+        {
+            // loading the rightmost module print out filler bar text
+            for (int i = 0; i < barSize - currentModuleRemoveSizeLocal - settingsPaddingOuter * 2; i++)
+            {
+                printf("=");
+            }
+        }
+        else if (itModule == 1)
+        {
+            // loading the center module
+
+            printf("\r");
+            for (int i = 0; i < barSize / 2 - currentModuleRemoveSizeLocal / 2; i++)
+            {
+                printf("-");
+            }
+        }
+        else
+        {
+            printf("\r");
+        }
+        for (int moduleLoop = 0;; moduleLoop++)
+        {
+            if (!moduleChildren)
+                vout("FATAL_ERROR: required module not found:", currentModule, verbose, 1);
+
+            // for SUBMODULES
+            toml_datum_t tmp_moduleChild = toml_string_at(moduleChildren, moduleLoop);
+            if (!tmp_moduleChild.ok)
+                // if the module is not found then exit script
+                break;
+
+            vout("INFO: loaded submodule:", tmp_moduleChild.u.s, verbose, 0);
+
+            toml_table_t *moduleChild = toml_table_in(config, tmp_moduleChild.u.s);
+            if (!moduleChild)
+                // if the module is not found then exit script
+                vout("FATAL_ERROR: required module not found:", currentModule, verbose, 1);
+
+            // define variables
+            char *moduleChildBackground = toml_string_in(moduleChild, "background").u.s,
+                 *moduleChildForeground = toml_string_in(moduleChild, "foreground").u.s,
+                 *moduleChildType = toml_string_in(moduleChild, "type").u.s,
+                 *moduleChildPre = toml_string_in(moduleChild, "prefix").u.s,
+                 *moduleChildSuf = toml_string_in(moduleChild, "suffix").u.s,
+                 *moduleChildContent;
+
+            // get the content of the module
+            if (strcmp(moduleChildType, "text") == 0)
+            {
+                moduleChildContent = toml_string_in(moduleChild, "content").u.s;
+            }
+            else
+            {
+                moduleChildContent = systemc(toml_string_in(moduleChild, "exec").u.s);
+            }
+
+            // final colors
+            char *background, *foreground;
+
+            // figure out the background
+            if (moduleChildBackground == NULL)
+            {
+                if (moduleBackground == NULL)
+                {
+                    background = settingsBackground;
+                }
+                else
+                {
+                    background = moduleBackground;
+                }
+            }
+            else
+            {
+                background = moduleChildBackground;
+            }
+            // figure out the background
+            if (moduleChildForeground == NULL)
+            {
+                if (moduleForeground == NULL)
+                {
+                    foreground = settingsForeground;
+                }
+                else
+                {
+                    foreground = moduleForeground;
+                }
+            }
+            else
+            {
+                foreground = moduleChildForeground;
+            }
+
+            char *paddingBackground, *paddingForeground;
+            // same for the padding colors
+            if (modulePaddingBackground == NULL)
+            {
+                if (settingsPaddingBackground == NULL)
+                {
+                    paddingBackground = background;
+                }
+                else
+                {
+                    paddingBackground = settingsPaddingBackground;
+                }
+            }
+            else
+            {
+                paddingBackground = modulePaddingBackground;
+            }
+            if (modulePaddingForeground == NULL)
+            {
+                if (settingsPaddingForeground == NULL)
+                {
+                    paddingForeground = foreground;
+                }
+                else
+                {
+                    paddingForeground = settingsPaddingForeground;
+                }
+            }
+            else
+            {
+                paddingForeground = modulePaddingForeground;
+            }
+
+            // and the same for the spacer char
+            char *spacerChar;
+            if (moduleSpacerChar == NULL)
+            {
+                spacerChar = settingsSpacerChar;
+            }
+            else
+            {
+                spacerChar = moduleSpacerChar;
+            }
+            // left padding
+            int childModuleLeftPadding,
+                childModuleRightPadding;
+            if (itModule == 2)
+            { // module is left
+                childModuleLeftPadding = 0;
+                childModuleRightPadding = settingsPaddingInner;
+            }
+            else if (itModule == 1)
+            {
+
+                childModuleLeftPadding = settingsPaddingInner / 2;
+                childModuleRightPadding = settingsPaddingInner / 2;
+            }
+            else
+            {
+
+                childModuleLeftPadding = settingsPaddingInner;
+                childModuleRightPadding = 0;
+            }
+            for (int i = 0; i < childModuleLeftPadding; i++)
+            {
+                printc(paddingForeground, paddingBackground, spacerChar);
+            }
+            printc(foreground, background, moduleChildContent);
+            // right padding
+            for (int i = 0; i < childModuleRightPadding; i++)
+            {
+                printc(paddingForeground, paddingBackground, spacerChar);
+            }
+
+            if (itModule == 0)
+
+            {
+                for (int tmp_paddingInner = 0; tmp_paddingInner < settingsPaddingInner; tmp_paddingInner++)
+                {
+                    printc(settingsForeground, settingsBackground, settingsSpacerChar);
+                }
+            }
+        }
+    }
+    fflush(stdout);
     if (recurse == 1)
     {
         sleep(recurseTimeout);
-        goto mainLoop;
+        if (tail == 0)
+        {
+            printf("\r");
+        }
+        goto renderBar;
     }
+    printf("\n");
     return 0;
 }
