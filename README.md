@@ -7,7 +7,7 @@ this program is an lightweight alternative for i3status that can be customized c
 
 ## installation
 to install xobar you can run the following I many terminal, provided `git` and `gcc` are available 
-```
+```BASH
 git clone https://github.com/9jh1/xobar
 cd xobar 
 gcc xobar.c -o xobar
@@ -28,7 +28,7 @@ xobar [OPTIONS]
 ## configuration
 xobar uses a TOML based configuration.
 the configuration is made up of four primary objects those being the `center`, `left`, `right` and `settings` objects these are required to be defined in your config file. xobar uses a cascading-fallback system for inherited styles for example this configuration
-```
+```TOML
 # ...
 [left] 
 children=["example"]
