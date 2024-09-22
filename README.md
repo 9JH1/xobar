@@ -4,9 +4,7 @@ colorful i3status alternative
 <br>
 this program is an lightweight alternative for i3status that can be customized completly with colors and scripts.
 <br>
-xobar uses a TOML based configuration with very li
 
-the configuration is made up of four primary objects those being the `center`, `left`, `right` and `settings` objects these are required to be defined in your config file. <br><br> 
 ## installation
 to install xobar you can run the following I many terminal, provided `git` and `gcc` are available 
 ```
@@ -28,3 +26,17 @@ xobar [OPTIONS]
  --help show this dialog
 ```
 ## configuration
+xobar uses a TOML based configuration.
+the configuration is made up of four primary objects those being the `center`, `left`, `right` and `settings` objects these are required to be defined in your config file. xobar uses a cascading-fallback system for inherited styles for example this configuration
+```
+# ...
+[left] 
+children=["example"]
+background = "#ff0000"
+
+[example]
+type = "text"
+content = "Hello World!"
+background = "#00ff00" 
+# ...
+```
