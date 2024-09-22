@@ -48,6 +48,7 @@ Module ( example )
    terminal ( default terminal colours / no colours )
 ```
 ### Documentation
-#### - Sectors 
-#### - Module
-#### - Settings
+- #### Sectors 
+- - test
+- #### Module
+- #### Settings
