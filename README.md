@@ -49,27 +49,27 @@ Module ( example )
 ```
 ### Documentation
 - #### Sectors 
-  - `spacer`
-  - `children`
-  - `background`
-  - `foreground`
-  - `padding-background`
-  - `padding-foreground`
+  - `spacer` [CHAR] sets the character used for the text of the padding inside of a module
+  - `children` [ARRAY] array of module names that will be in this sector
+  - `background` [STRING] background colour in hexadecimal format
+  - `foreground` [STRING] foreground colour in hexadecimal format
+  - `padding-background` [STRING] colour of padding background inside of module in hexadecimal format
+  - `padding-foreground` [STRING] colour of padding foreground inside of module in hexadecimal format 
 - #### Module
-  - `type`
-    - `content`
-    - `exec`
-      - `arguments`
-  - `background`
-  - `foreground`
+  - `type` [STRING] set type of module, can be set to either `text` or `script`
+    - `content` [STRING] if the `type` is set to `text` then the content is the text that will be printed in the module
+    - `exec` [STRING] if the `type` is `script` then the exec is the command that will be executed, captured and printed on the module
+      - `argument` [STRING] if the `type` is `script` then the argument is parses into the command which will then be executed, captured and printed on the module
+  - `background` [STRING] background colour of the module in hexadecimal format
+  - `foreground` [STRING] foreground colour of the module in hexadecimal format 
 - #### Settings
-  - `background`
-  - `foreground`
-  - `padding-background`
-  - `padding-foreground`
-  - `padding-outer`
-  - `padding-inner`
-  - `spacer`
-  - `void-spacer`
-  - `void-background`
-  - `void-foreground`
+  - `background` [STRING] background colour of the entire bar ( fallback ) in hexadecimal format
+  - `foreground` [STRING] foreground colour of the entire bar ( fallback ) in hexadecimal format 
+  - `padding-background` [STRING] background colour of outer padding in hexadecimal format
+  - `padding-foreground` [STRING] foreground colour of outer padding in hexadecimal format 
+  - `padding-outer` [INT] amount of padding on either side of bar 
+  - `padding-inner` [INT] amount of padding between modules inside of bar
+  - `spacer` [CHAR] sets the character used for the text of the padding on either side of the bar 
+  - `void-spacer` [CHAR] sets the character used for the text of the padding between sectors 
+  - `void-background` [STRING] background colour of the padding between sectors 
+  - `void-foreground` [STRING] foreground colour of the padding between sectors 
