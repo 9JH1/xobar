@@ -29,14 +29,15 @@ xobar [OPTIONS]
 xobar uses a TOML based configuration.
 the configuration is made up of four primary objects those being the `center`, `left`, `right` and `settings` objects these are required to be defined in your config file. xobar uses a cascading-fallback system for inherited styles for example this configuration
 ```TOML
-# ...
-[left] 
-children=["example"]
-background = "#ff0000"
-
-[example]
-type = "text"
-content = "Hello World!"
-background = "#00ff00" 
-# ...
-```
+0 # ...
+1 [left] 
+2 children=["example"]
+3 background = "#ff0000"
+4
+5 [example]
+6 type = "text"
+7 content = "Hello World!"
+8 background = "#00ff00" 
+9 # ...
+``` 
+would show "`Hello World!`" with a green background,
