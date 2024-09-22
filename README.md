@@ -49,6 +49,27 @@ Module ( example )
 ```
 ### Documentation
 - #### Sectors 
-  - test
+  - `spacer`
+  - `children`
+  - `background`
+  - `foreground`
+  - `padding-background`
+  - `padding-foreground`
 - #### Module
+  - `type`
+    - `content`
+    - `exec`
+      - `arguments`
+  - `background`
+  - `foreground`
 - #### Settings
+  - `background`
+  - `foreground`
+  - `padding-background`
+  - `padding-foreground`
+  - `padding-outer`
+  - `padding-inner`
+  - `spacer`
+  - `void-spacer`
+  - `void-background`
+  - `void-foreground`
