@@ -16,6 +16,11 @@ xobar --help
 ```
 xobar usage: 
 ```
+XOBAR (x-oh-bar)
+lightweight i3status alternative
+********************************
+written by 3hy (@9JH1)
+
 xobar [OPTIONS]
  -c [FILE] enter config file path
  -l [INT] update bar every INT seconds
