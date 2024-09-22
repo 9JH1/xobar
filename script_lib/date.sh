@@ -1,1 +1,1 @@
-date +$1 | awk '{printf $0}'
+date +$1$2 | awk '{printf $0}'

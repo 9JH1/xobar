@@ -9,6 +9,7 @@
 #include "toml.c"
 #include <stdio.h>
 #include <unistd.h>
+#include <signal.h>
 // no libs lol
 
 #define BUFFER_SIZE 1024
@@ -140,6 +141,11 @@ void htr(const char *hex, int *r, int *g, int *b)
 }
 void printc(const char *fg_hex, const char *bg_hex, const char *text)
 {
+    if (fg_hex == NULL && bg_hex == NULL)
+    {
+        printf("%s", text);
+        return;
+    }
     int foreground_r, foreground_g, foreground_b;
     int background_r, background_g, background_b;
     char escape_seq[128] = "\033["; // Buffer to build the escape sequence
@@ -151,6 +157,7 @@ void printc(const char *fg_hex, const char *bg_hex, const char *text)
     escape_seq[2] = '\0';
 
     // Convert and apply foreground color if provided
+
     if (fg_hex != NULL || fg_hex != "")
     {
         htr(fg_hex, &foreground_r, &foreground_g, &foreground_b);
@@ -202,9 +209,19 @@ void vout(const char *msg, const char *msg1, int vb, int error)
         exit(1);
     }
 }
+void qh()
+{
+    printf("\n\e[?25h");
+    exit(0);
+}
 
 int main(int argc, char *argv[])
 {
+    // hide the cursor
+    printf("\e[?25l");
+
+    // start quit listener
+    signal(SIGINT, qh);
     // base vars
     FILE *fp;
     char errbuf[256];
@@ -215,7 +232,9 @@ int main(int argc, char *argv[])
         recurse = 0,
         recurseTimeout = 5,
         verbose = 0,
-        tail = 0;
+        tail = 0,
+        size = 0,
+        resizable = 0;
 
     // condition vars on arguments
     for (int a = 1; a < argc; a++)
@@ -231,7 +250,7 @@ int main(int argc, char *argv[])
         { // config file argument "-c"
             configFile = nextArgument;
         }
-        else if (strcmp(argument, "-r") == 0 && nextArgument != NULL)
+        else if (strcmp(argument, "-l") == 0 && nextArgument != NULL)
         { // recurse mode on
             recurse = 1;
             recurseTimeout = atoi(nextArgument);
@@ -239,6 +258,14 @@ int main(int argc, char *argv[])
         else if (strcmp(argument, "-t") == 0)
         {
             tail = 1;
+        }
+        else if (strcmp(argument, "-s") == 0 && nextArgument != NULL)
+        {
+            size = atoi(nextArgument);
+        }
+        else if (strcmp(argument, "-r") == 0)
+        {
+            resizable = 1;
         }
         else
         {
@@ -271,7 +298,7 @@ int main(int argc, char *argv[])
     // load the settings
     toml_table_t *settings = toml_table_in(config, "settings");
     if (!settings)
-        vout("ERROR: [settings] module not found", "", verbose, 1);
+        vout("ERROR: [settings] module not found", "", verbose, 0);
     else
         vout("INFO: [settings] module loaded", "", verbose, 0);
 
@@ -279,32 +306,84 @@ int main(int argc, char *argv[])
     int settingsSpacerWidths = toml_int_in(settings, "spacer-width").u.i,
         settingsPaddingInner = toml_int_in(settings, "padding-inner").u.i,
         settingsPaddingOuter = toml_int_in(settings, "padding-outer").u.i,
+        barSize = 0;
+    if (size >= 0)
+    {
+        barSize = size;
+    }
+    else
+    {
         barSize = gbs();
+    }
     char *currentModule = "",
          *settingsBackground = toml_string_in(settings, "background").u.s,
          *settingsForeground = toml_string_in(settings, "foreground").u.s,
          *settingsSpacerChar = toml_string_in(settings, "spacer").u.s,
-
          *settingsPaddingForeground = toml_string_in(settings, "padding-foreground").u.s,
-         *settingsPaddingBackground = toml_string_in(settings, "padding-background").u.s;
-
-    // swap out null items
+         *settingsPaddingBackground = toml_string_in(settings, "padding-background").u.s,
+         *settingsPaddingSpacerChar = toml_string_in(settings, "void-spacer").u.s,
+         *settingsPaddingSpacerCharForeground = toml_string_in(settings, "void-foreground").u.s,
+         *settingsPaddingSpacerCharBackground = toml_string_in(settings, "void-background").u.s;
+    // can add a void spacer option but ill do it later ;3
+    if (settingsPaddingBackground == NULL)
+    {
+        settingsPaddingBackground = settingsBackground;
+    }
+    if (settingsPaddingForeground == NULL)
+    {
+        settingsPaddingForeground = settingsForeground;
+    }
     if (settingsSpacerChar == NULL)
     {
-        settingsSpacerChar = "";
+        settingsSpacerChar = " ";
     }
+    if (settingsPaddingSpacerChar == NULL)
+    {
+        settingsPaddingSpacerChar = settingsSpacerChar;
+    }
+    if (settingsPaddingSpacerCharBackground == NULL)
+    {
+        if (settingsPaddingBackground == NULL)
+        {
+            settingsPaddingSpacerCharBackground = settingsBackground;
+        }
+        else
+        {
+            settingsPaddingSpacerCharBackground = settingsPaddingBackground;
+        }
+    }
+    if (settingsPaddingSpacerCharForeground == NULL)
+    {
+        if (settingsPaddingForeground == NULL)
+        {
+            settingsPaddingSpacerCharForeground = settingsForeground;
+        }
+        else
+        {
+            settingsPaddingSpacerCharForeground = settingsPaddingForeground;
+        }
+    }
+
+    // swap out null items
 
     // get the module blocks
 
 renderBar:
     // add the very first padding char of padding outer
-    for (int tmp_paddingInner = 0; tmp_paddingInner < settingsPaddingOuter; tmp_paddingInner++)
-    {
-        printc(settingsForeground, settingsBackground, settingsSpacerChar);
-    }
 
 // content
 renderContent:
+    if (barSize != gbs() && resizable == 1)
+    {
+        if (tail == 0)
+        {
+            system("clear");
+        }
+        if (size >= 0)
+        {
+            barSize = gbs();
+        }
+    }
     for (int itModule = 0; itModule < 3; itModule++) // 0=left, 1=center, 2=right
     {
         int currentModuleRemoveSizeLocal = 0, nextModuleRemoveSizeLocal = 0;
@@ -406,9 +485,9 @@ renderContent:
         if (itModule == 0)
         {
             // loading the rightmost module print out filler bar text
-            for (int i = 0; i < barSize - currentModuleRemoveSizeLocal - settingsPaddingOuter * 2; i++)
+            for (int i = 0; i < barSize - currentModuleRemoveSizeLocal - settingsPaddingOuter; i++)
             {
-                printf("=");
+                printc(settingsPaddingSpacerCharForeground, settingsPaddingSpacerCharBackground, settingsPaddingSpacerChar);
             }
         }
         else if (itModule == 1)
@@ -418,12 +497,16 @@ renderContent:
             printf("\r");
             for (int i = 0; i < barSize / 2 - currentModuleRemoveSizeLocal / 2; i++)
             {
-                printf("-");
+                printc(settingsPaddingSpacerCharForeground, settingsPaddingSpacerCharBackground, settingsPaddingSpacerChar);
             }
         }
         else
         {
             printf("\r");
+            for (int tmp_paddingInner = 0; tmp_paddingInner < settingsPaddingOuter; tmp_paddingInner++)
+            {
+                printc(settingsForeground, settingsBackground, settingsSpacerChar);
+            }
         }
         for (int moduleLoop = 0;; moduleLoop++)
         {
@@ -572,11 +655,10 @@ renderContent:
             }
 
             if (itModule == 0)
-
             {
-                for (int tmp_paddingInner = 0; tmp_paddingInner < settingsPaddingInner; tmp_paddingInner++)
+                for (int tmp_paddingInner = 0; tmp_paddingInner < settingsPaddingOuter; tmp_paddingInner++)
                 {
-                    printc(settingsForeground, settingsBackground, settingsSpacerChar);
+                    printc(settingsPaddingForeground, settingsPaddingBackground, settingsSpacerChar);
                 }
             }
         }
@@ -589,8 +671,12 @@ renderContent:
         {
             printf("\r");
         }
+        else
+        {
+            printf("\n");
+        }
         goto renderBar;
     }
-    printf("\n");
+    qh();
     return 0;
 }

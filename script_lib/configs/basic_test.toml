@@ -1,0 +1,60 @@
+[left]
+children = ["left_example"]
+
+[center]
+children = ["center_example"]
+
+[right]
+spacer = " "
+prefix = ""
+children = ["right_example"]
+
+[left_example]
+type="text"
+content = "LEFT"
+
+[center_example]
+type="text"
+content = "CENTER"
+
+[right_example]
+type="text"
+content="RIGHT"
+
+ [settings]
+background = "#333333"
+foreground = "#c79c1c"
+spacer = ' '
+# void-spacer = '-'
+# void-foreground = "#ff0000"
+# void-background = "#00ff00"
+#padding-inner = 2
+padding-outer = 2
+
+
+
+#background
+#foreground
+#spacer
+#spacer-char
+#padding-inner
+#type
+#padding-foreground
+#padding-background
+# settings only
+#padding
+
+# module
+#      side
+#          setting 
+#                  0
+
+# module
+#      side
+#          setting 
+#                ' '
+
+# module
+#      side
+#         setting
+#               default
